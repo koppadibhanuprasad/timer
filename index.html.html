@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Timekeeper</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#12141c;
+    --ink-2:#1b1e2a;
+    --ivory:#f2ede4;
+    --ivory-dim:#a9a6a0;
+    --amber:#e8a33d;
+    --teal:#3e6259;
+    --line: rgba(242,237,228,0.12);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  body{
+    background:var(--ink);
+    color:var(--ivory);
+    font-family:'Inter', sans-serif;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:100vh;
+    height:100dvh;
+    padding:clamp(10px, 3vh, 24px) 20px;
+    touch-action:manipulation;
+  }
+
+  .app{
+    width:100%;
+    max-width:420px;
+    max-height:100%;
+    margin:auto;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--ivory-dim);
+    text-align:center;
+    margin-bottom:clamp(4px, 1vh, 8px);
+  }
+
+  .clock{
+    text-align:center;
+    font-family:'Inter', sans-serif;
+    font-variant-numeric: tabular-nums;
+    font-size:clamp(16px, 4vh, 22px);
+    font-weight:600;
+    color:var(--ivory);
+    margin-bottom:clamp(8px, 2.5vh, 24px);
+    letter-spacing:0.03em;
+  }
+
+  .heading{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:clamp(15px, 3.5vh, 20px);
+    text-align:center;
+    margin:0 0 clamp(6px, 1.8vh, 18px) 0;
+    color:var(--ivory);
+    transition:color .25s ease;
+  }
+  .heading.break{ color:var(--teal); }
+
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:22px;
+    text-align:center;
+    margin:0 0 28px 0;
+    color:var(--ivory);
+  }
+
+  /* Mode toggle */
+  .modes{
+    display:flex;
+    justify-content:center;
+    gap:4px;
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:4px;
+    width:fit-content;
+    margin:0 auto clamp(10px, 3vh, 32px) auto;
+  }
+  .modes button{
+    border:none;
+    background:transparent;
+    color:var(--ivory-dim);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    font-weight:500;
+    padding:clamp(5px, 1.4vh, 8px) 18px;
+    border-radius:999px;
+    cursor:pointer;
+    transition:all .25s ease;
+  }
+  .modes button.active{
+    background:var(--amber);
+    color:var(--ink);
+  }
+
+  /* Ring */
+  .ring-wrap{
+    position:relative;
+    width:clamp(120px, 38vh, 280px);
+    height:clamp(120px, 38vh, 280px);
+    margin:0 auto clamp(10px, 3vh, 32px) auto;
+    flex-shrink:0;
+  }
+  svg{ transform:rotate(-90deg); width:100%; height:100%; }
+  .track{ fill:none; stroke:var(--line); stroke-width:6; }
+  .progress{
+    fill:none;
+    stroke:var(--amber);
+    stroke-width:6;
+    stroke-linecap:round;
+    transition:stroke-dashoffset 0.2s linear;
+  }
+  .ring-wrap.stopwatch .progress{ stroke:var(--teal); }
+  .ring-wrap.break .progress{ stroke:var(--teal); }
+
+  .readout{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  }
+  .time{
+    font-family:'Fraunces', serif;
+    font-variant-numeric: tabular-nums;
+    font-size:clamp(26px, 13vh, 54px);
+    font-weight:500;
+    letter-spacing:0.01em;
+  }
+  .status{
+    margin-top:6px;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--ivory-dim);
+    height:14px;
+  }
+
+  /* Presets */
+  .presets{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    margin-bottom:clamp(10px, 3vh, 28px);
+    flex-wrap:wrap;
+  }
+  .presets button{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    color:var(--ivory);
+    font-family:'Inter', sans-serif;
+    font-size:13px;
+    padding:clamp(5px, 1.4vh, 8px) 14px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:border-color .2s ease;
+  }
+  .presets button:hover{ border-color:var(--amber); }
+  .presets button.active{ border-color:var(--amber); color:var(--amber); }
+
+  /* Controls */
+  .controls{
+    display:flex;
+    justify-content:center;
+    gap:12px;
+  }
+  .controls button{
+    font-family:'Inter', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    padding:clamp(9px, 2.4vh, 13px) 28px;
+    border-radius:12px;
+    border:none;
+    cursor:pointer;
+    transition:transform .15s ease, opacity .15s ease;
+  }
+  .controls button:active{ transform:scale(0.96); }
+  .btn-primary{ background:var(--amber); color:var(--ink); }
+  .btn-secondary{ background:transparent; color:var(--ivory); border:1px solid var(--line) !important; }
+  .btn-secondary:hover{ border-color:var(--ivory-dim) !important; }
+  button:disabled{ opacity:0.35; cursor:not-allowed; }
+
+  .laps{
+    margin-top:clamp(8px, 2vh, 24px);
+    max-height:clamp(60px, 14vh, 140px);
+    overflow-y:auto;
+    border-top:1px solid var(--line);
+    padding-top:12px;
+    width:100%;
+  }
+  .laps div{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    padding:6px 4px;
+    color:var(--ivory-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .laps div span:first-child{ color:var(--ivory); }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="eyebrow">Timekeeper</div>
+  <div class="clock" id="liveClock"></div>
+  <div class="heading" id="modeHeading">Focus</div>
+
+  <div class="modes">
+    <button id="modeFocusBtn" class="active">Focus timer</button>
+    <button id="modeStopBtn">Stopwatch</button>
+  </div>
+
+  <div class="ring-wrap" id="ringWrap">
+    <svg viewBox="0 0 280 280" width="280" height="280">
+      <circle class="track" cx="140" cy="140" r="126"></circle>
+      <circle class="progress" id="progressRing" cx="140" cy="140" r="126"></circle>
+    </svg>
+    <div class="readout">
+      <div class="time" id="timeDisplay">10:00</div>
+      <div class="status" id="statusText"></div>
+    </div>
+  </div>
+
+  <div class="presets" id="presets">
+    <button data-min="10" class="active">10 min</button>
+    <button data-min="25">25 min</button>
+    <button data-min="50">50 min</button>
+  </div>
+
+  <div class="controls" id="focusControls">
+    <button class="btn-primary" id="startPauseBtn">Start</button>
+    <button class="btn-secondary" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="controls hidden" id="stopControls">
+    <button class="btn-primary" id="stopStartPauseBtn">Start</button>
+    <button class="btn-secondary" id="lapBtn" disabled>Lap</button>
+    <button class="btn-secondary" id="stopResetBtn">Reset</button>
+  </div>
+
+  <div class="laps hidden" id="lapList"></div>
+</div>
+
+<script>
+  const CIRC = 2 * Math.PI * 126;
+  const ring = document.getElementById('progressRing');
+  ring.style.strokeDasharray = CIRC;
+  ring.style.strokeDashoffset = 0;
+
+  const timeDisplay = document.getElementById('timeDisplay');
+  const statusText = document.getElementById('statusText');
+  const ringWrap = document.getElementById('ringWrap');
+  const modeHeading = document.getElementById('modeHeading');
+
+  const modeFocusBtn = document.getElementById('modeFocusBtn');
+  const modeStopBtn = document.getElementById('modeStopBtn');
+  const presets = document.getElementById('presets');
+  const focusControls = document.getElementById('focusControls');
+  const stopControls = document.getElementById('stopControls');
+  const lapList = document.getElementById('lapList');
+
+  function pad(n){ return n.toString().padStart(2,'0'); }
+  function fmt(totalSeconds){
+    const h = Math.floor(totalSeconds/3600);
+    const m = Math.floor((totalSeconds%3600)/60);
+    const s = Math.floor(totalSeconds%60);
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+  }
+
+  /* ---------- LIVE CLOCK (actual current time) ---------- */
+  const liveClock = document.getElementById('liveClock');
+  function renderClock(){
+    const now = new Date();
+    let hours = now.getHours();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    if(hours === 0) hours = 12;
+    liveClock.textContent = `${hours}:${pad(now.getMinutes())}:${pad(now.getSeconds())} ${ampm}`;
+  }
+  renderClock();
+  setInterval(renderClock, 1000);
+
+  /* ---------- KEEP SCREEN AWAKE ---------- */
+  let wakeLock = null;
+  let wantsWakeLock = false;
+
+  async function requestWakeLock(){
+    wantsWakeLock = true;
+    if(!('wakeLock' in navigator)) return;
+    try{
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }catch(e){ /* not available / not allowed right now */ }
+  }
+  function releaseWakeLock(){
+    wantsWakeLock = false;
+    if(wakeLock){ wakeLock.release(); wakeLock = null; }
+  }
+  // iOS releases the lock whenever the page is backgrounded — grab it back when it returns
+  document.addEventListener('visibilitychange', () => {
+    if(wantsWakeLock && document.visibilityState === 'visible' && wakeLock === null){
+      requestWakeLock();
+    }
+  });
+
+  /* ---------- SOUND ALERTS ---------- */
+  function playTone(freq, duration){
+    try{
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.6, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration/1000);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration/1000);
+    }catch(e){ /* audio not available */ }
+  }
+  function playFocusEndSound(){
+    playTone(659, 220);
+    setTimeout(() => playTone(880, 300), 250);
+  }
+  function playBreakEndSound(){
+    playTone(523, 180);
+    setTimeout(() => playTone(659, 180), 200);
+    setTimeout(() => playTone(784, 320), 400);
+  }
+
+  /* ---------- FOCUS TIMER (countdown) ---------- */
+  // minutes -> break minutes that follow that focus length
+  const breakMap = { 10: 2, 25: 5, 50: 10 };
+  let currentPresetMin = 10;
+  let phase = 'focus'; // 'focus' or 'break'
+  let doneMessage = '';
+
+  let focusTotal = currentPresetMin*60;
+  let focusRemaining = focusTotal;
+  let focusTicker = null;
+  let focusRunning = false;
+
+  function renderFocus(){
+    timeDisplay.textContent = fmt(focusRemaining);
+    const frac = focusRemaining / focusTotal;
+    ring.style.strokeDashoffset = CIRC * (1 - frac);
+    modeHeading.textContent = phase === 'break' ? 'Break' : 'Focus';
+    modeHeading.classList.toggle('break', phase === 'break');
+    if(focusRunning){
+      statusText.textContent = phase === 'break' ? 'Break' : 'Running';
+    } else if(focusRemaining === 0){
+      statusText.textContent = doneMessage || 'Done';
+    } else {
+      statusText.textContent = phase === 'break' ? 'Break — paused' : 'Paused';
+    }
+  }
+
+  function tickFocus(){
+    if(focusRemaining > 0){
+      focusRemaining--;
+      renderFocus();
+      if(focusRemaining === 0){
+        stopFocus();
+        const breakLen = breakMap[currentPresetMin];
+        if(phase === 'focus' && breakLen){
+          // focus session done -> play a sound, then roll straight into the break
+          playFocusEndSound();
+          phase = 'break';
+          ringWrap.classList.add('break');
+          focusTotal = breakLen*60;
+          focusRemaining = focusTotal;
+          doneMessage = '';
+          renderFocus();
+          startFocus();
+        } else if(phase === 'break'){
+          // break done -> play a sound, then wait for the user to press Start again
+          playBreakEndSound();
+          phase = 'focus';
+          ringWrap.classList.remove('break');
+          focusTotal = currentPresetMin*60;
+          focusRemaining = focusTotal;
+          doneMessage = 'Break over';
+          releaseWakeLock();
+          renderFocus();
+        } else {
+          playFocusEndSound();
+          doneMessage = "Time's up";
+          releaseWakeLock();
+          renderFocus();
+        }
+      }
+    }
+  }
+
+  function startFocus(){
+    if(focusRemaining === 0) return;
+    focusRunning = true;
+    doneMessage = '';
+    document.getElementById('startPauseBtn').textContent = 'Pause';
+    focusTicker = setInterval(tickFocus, 1000);
+    requestWakeLock();
+    renderFocus();
+  }
+  function pauseFocus(){
+    focusRunning = false;
+    document.getElementById('startPauseBtn').textContent = 'Start';
+    clearInterval(focusTicker);
+    releaseWakeLock();
+    renderFocus();
+  }
+  function stopFocus(){
+    focusRunning = false;
+    document.getElementById('startPauseBtn').textContent = 'Start';
+    clearInterval(focusTicker);
+  }
+  function resetFocus(){
+    stopFocus();
+    phase = 'focus';
+    ringWrap.classList.remove('break');
+    doneMessage = '';
+    focusTotal = currentPresetMin*60;
+    focusRemaining = focusTotal;
+    releaseWakeLock();
+    renderFocus();
+  }
+
+  document.getElementById('startPauseBtn').addEventListener('click', () => {
+    focusRunning ? pauseFocus() : startFocus();
+  });
+  document.getElementById('resetBtn').addEventListener('click', resetFocus);
+
+  presets.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    [...presets.children].forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPresetMin = parseInt(btn.dataset.min, 10);
+    phase = 'focus';
+    ringWrap.classList.remove('break');
+    doneMessage = '';
+    focusTotal = currentPresetMin*60;
+    focusRemaining = focusTotal;
+    stopFocus();
+    renderFocus();
+  });
+
+  /* ---------- STOPWATCH ---------- */
+  let stopElapsed = 0;
+  let stopTicker = null;
+  let stopRunning = false;
+  let lapCount = 0;
+  let lastLapTime = 0;
+
+  function renderStop(){
+    timeDisplay.textContent = fmt(stopElapsed);
+    const frac = (stopElapsed % 60) / 60;
+    ring.style.strokeDashoffset = CIRC * (1 - frac);
+    statusText.textContent = stopRunning ? 'Running' : (stopElapsed === 0 ? '' : 'Paused');
+  }
+
+  function tickStop(){
+    stopElapsed += 0.1;
+    renderStop();
+  }
+
+  function startStop(){
+    stopRunning = true;
+    document.getElementById('stopStartPauseBtn').textContent = 'Pause';
+    document.getElementById('lapBtn').disabled = false;
+    stopTicker = setInterval(tickStop, 100);
+    requestWakeLock();
+    renderStop();
+  }
+  function pauseStop(){
+    stopRunning = false;
+    document.getElementById('stopStartPauseBtn').textContent = 'Start';
+    clearInterval(stopTicker);
+    releaseWakeLock();
+    renderStop();
+  }
+  function resetStop(){
+    pauseStop();
+    stopElapsed = 0;
+    lapCount = 0;
+    lastLapTime = 0;
+    lapList.innerHTML = '';
+    lapList.classList.add('hidden');
+    document.getElementById('lapBtn').disabled = true;
+    releaseWakeLock();
+    renderStop();
+  }
+
+  document.getElementById('stopStartPauseBtn').addEventListener('click', () => {
+    stopRunning ? pauseStop() : startStop();
+  });
+  document.getElementById('stopResetBtn').addEventListener('click', resetStop);
+  document.getElementById('lapBtn').addEventListener('click', () => {
+    lapCount++;
+    const split = stopElapsed - lastLapTime;
+    lastLapTime = stopElapsed;
+    lapList.classList.remove('hidden');
+    const row = document.createElement('div');
+    row.innerHTML = `<span>Lap ${lapCount}</span><span>${fmt(split)}</span>`;
+    lapList.prepend(row);
+  });
+
+  /* ---------- MODE SWITCH ---------- */
+  function showFocusMode(){
+    modeFocusBtn.classList.add('active');
+    modeStopBtn.classList.remove('active');
+    presets.classList.remove('hidden');
+    focusControls.classList.remove('hidden');
+    stopControls.classList.add('hidden');
+    lapList.classList.add('hidden');
+    ringWrap.classList.remove('stopwatch');
+    modeHeading.classList.remove('break');
+    pauseStop();
+    renderFocus();
+  }
+  function showStopMode(){
+    modeStopBtn.classList.add('active');
+    modeFocusBtn.classList.remove('active');
+    presets.classList.add('hidden');
+    focusControls.classList.add('hidden');
+    stopControls.classList.remove('hidden');
+    ringWrap.classList.add('stopwatch');
+    modeHeading.textContent = 'Stopwatch';
+    modeHeading.classList.remove('break');
+    pauseFocus();
+    renderStop();
+  }
+  modeFocusBtn.addEventListener('click', showFocusMode);
+  modeStopBtn.addEventListener('click', showStopMode);
+
+  renderFocus();
+</script>
+
+</body>
+</html>
